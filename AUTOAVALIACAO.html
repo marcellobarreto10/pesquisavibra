@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autoavaliação de Atendimento — Vibra</title>
+<style>
+  :root{
+    --primary:#1F4E79;
+    --primary-light:#2E75B6;
+    --accent:#F39C12;
+    --bg:#F5F7FA;
+    --card:#FFFFFF;
+    --text:#1F2937;
+    --muted:#6B7280;
+    --border:#E5E7EB;
+    --green:#16A34A;
+    --amber:#F59E0B;
+    --red:#DC2626;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.55;
+    padding:20px 12px 80px;min-height:100vh;
+  }
+  .wrap{max-width:780px;margin:0 auto}
+  header{
+    background:linear-gradient(135deg,var(--primary),var(--primary-light));
+    color:#fff;padding:28px 24px;border-radius:16px;margin-bottom:24px;
+    box-shadow:0 4px 16px rgba(31,78,121,.12);
+  }
+  header h1{font-size:24px;font-weight:700;margin-bottom:6px;letter-spacing:-.3px}
+  header .sub{opacity:.92;font-size:15px}
+  header .meta{margin-top:14px;font-size:13px;opacity:.85;border-top:1px solid rgba(255,255,255,.2);padding-top:12px}
+  .intro{
+    background:var(--card);padding:20px;border-radius:12px;margin-bottom:20px;
+    border-left:4px solid var(--accent);font-size:15px;
+  }
+  .intro strong{color:var(--primary)}
+  .progress-wrap{
+    position:sticky;top:0;background:var(--bg);padding:10px 0;z-index:10;
+    margin-bottom:16px;
+  }
+  .progress-bar{
+    height:8px;background:var(--border);border-radius:8px;overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));
+    width:0%;transition:width .3s ease;border-radius:8px;
+  }
+  .progress-text{font-size:12px;color:var(--muted);margin-top:6px;text-align:right}
+  .dim{
+    background:var(--card);border-radius:12px;padding:20px;margin-bottom:14px;
+    box-shadow:0 1px 3px rgba(0,0,0,.05);border:1px solid var(--border);
+  }
+  .dim h2{
+    font-size:17px;color:var(--primary);margin-bottom:6px;display:flex;align-items:center;gap:10px;
+  }
+  .dim h2 .num{
+    background:var(--primary);color:#fff;width:28px;height:28px;border-radius:50%;
+    display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;
+  }
+  .dim .desc{color:var(--muted);font-size:13px;margin-bottom:14px}
+  .q{padding:12px 0;border-bottom:1px solid var(--border)}
+  .q:last-child{border-bottom:none}
+  .q p{font-size:14px;margin-bottom:10px;color:var(--text)}
+  .scale{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:6px;
+  }
+  .scale label{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:10px 4px;border:1.5px solid var(--border);border-radius:8px;
+    cursor:pointer;font-size:12px;text-align:center;background:#fafbfc;
+    transition:all .15s;min-height:62px;
+  }
+  .scale label:hover{border-color:var(--primary-light);background:#f0f7ff}
+  .scale input{display:none}
+  .scale input:checked + .lbl-content{}
+  .scale label.selected{
+    border-color:var(--primary);background:var(--primary);color:#fff;
+  }
+  .scale .lbl-num{font-size:18px;font-weight:700;display:block;margin-bottom:2px}
+  .scale .lbl-text{font-size:10px;line-height:1.2;display:block}
+  .legend{font-size:11px;color:var(--muted);margin-top:8px;text-align:center}
+  .actions{margin-top:20px;display:flex;gap:10px;flex-wrap:wrap}
+  button{
+    flex:1;min-width:140px;padding:14px 20px;border:none;border-radius:10px;
+    font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;
+  }
+  .btn-primary{background:var(--primary);color:#fff}
+  .btn-primary:hover{background:var(--primary-light)}
+  .btn-secondary{background:#fff;color:var(--primary);border:2px solid var(--primary)}
+  .btn-secondary:hover{background:var(--bg)}
+  #results{display:none}
+  #results.show{display:block}
+  .score-card{
+    background:linear-gradient(135deg,var(--primary),var(--primary-light));
+    color:#fff;padding:24px;border-radius:14px;text-align:center;margin-bottom:20px;
+  }
+  .score-card .score{font-size:46px;font-weight:700;line-height:1}
+  .score-card .max{font-size:18px;opacity:.7}
+  .score-card .level{font-size:18px;font-weight:600;margin-top:8px}
+  .score-card .desc-level{font-size:13px;opacity:.9;margin-top:4px}
+  .dim-results{background:var(--card);border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid var(--border)}
+  .dim-results h3{font-size:16px;color:var(--primary);margin-bottom:14px}
+  .bar-row{margin-bottom:12px}
+  .bar-label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+  .bar-label .name{font-weight:500}
+  .bar-label .val{color:var(--muted);font-weight:600}
+  .bar-track{height:10px;background:var(--border);border-radius:6px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:6px;transition:width .8s ease}
+  .insight{
+    background:var(--card);border-radius:12px;padding:18px;margin-bottom:14px;
+    border-left:4px solid var(--primary);
+  }
+  .insight.strength{border-left-color:var(--green)}
+  .insight.gap{border-left-color:var(--amber)}
+  .insight h4{font-size:15px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .insight ul{list-style:none;padding-left:0}
+  .insight li{padding:6px 0;font-size:14px;border-bottom:1px dashed var(--border)}
+  .insight li:last-child{border-bottom:none}
+  .action-plan{
+    background:linear-gradient(135deg,#FFF8E1,#FFFDF6);
+    border:1px solid #FFE082;border-radius:12px;padding:20px;margin-bottom:14px;
+  }
+  .action-plan h4{color:#B45309;font-size:16px;margin-bottom:12px}
+  .action-plan ol{padding-left:20px}
+  .action-plan li{padding:6px 0;font-size:14px}
+  .action-plan strong{color:#92400E}
+  .footer-note{
+    text-align:center;color:var(--muted);font-size:12px;margin-top:24px;padding:14px;
+  }
+  .error-msg{
+    background:#FEF2F2;color:var(--red);padding:12px;border-radius:8px;
+    border-left:4px solid var(--red);margin:12px 0;font-size:14px;display:none;
+  }
+  .error-msg.show{display:block}
+  @media print{
+    body{background:#fff}
+    header{background:var(--primary)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .actions,.progress-wrap{display:none}
+    .dim{break-inside:avoid}
+  }
+  @media (max-width:480px){
+    header h1{font-size:20px}
+    .scale .lbl-num{font-size:16px}
+    .scale label{min-height:54px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Autoavaliação de Atendimento</h1>
+  <div class="sub">Como o cliente da Vibra me percebe hoje?</div>
+  <div class="meta">8 dimensões · ~5 minutos · resultado imediato e privado</div>
+</header>
+
+<div class="intro">
+  <strong>Como funciona:</strong> responda cada afirmação pensando na sua rotina das últimas 4 semanas. Escolha de 1 (quase nunca) a 5 (sempre). No final, você recebe um diagnóstico por dimensão, suas três maiores forças, suas três maiores oportunidades e um plano de ação para os próximos 7 dias. Ninguém vê seu resultado — é seu, para usar como quiser.
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-text" id="progressText">0 de 0 respondidas</div>
+</div>
+
+<form id="quizForm" novalidate></form>
+
+<div class="error-msg" id="errorMsg">Responda todas as questões antes de gerar o resultado.</div>
+
+<div class="actions">
+  <button type="button" class="btn-primary" onclick="calculate()">Gerar meu diagnóstico</button>
+  <button type="button" class="btn-secondary" onclick="resetForm()">Limpar respostas</button>
+</div>
+
+<div id="results">
+  <div class="score-card">
+    <div><span class="score" id="totalScore">0</span><span class="max">/5,0</span></div>
+    <div class="level" id="levelLabel"></div>
+    <div class="desc-level" id="levelDesc"></div>
+  </div>
+
+  <div class="dim-results">
+    <h3>Pontuação por dimensão</h3>
+    <div id="dimBars"></div>
+  </div>
+
+  <div class="insight strength">
+    <h4>Suas 3 maiores forças</h4>
+    <ul id="strengthsList"></ul>
+  </div>
+
+  <div class="insight gap">
+    <h4>Suas 3 maiores oportunidades</h4>
+    <ul id="gapsList"></ul>
+  </div>
+
+  <div class="action-plan">
+    <h4>Plano de ação — próximos 7 dias</h4>
+    <ol>
+      <li><strong>Escolha 1 hábito</strong> da sua maior oportunidade — não tente mudar tudo ao mesmo tempo.</li>
+      <li><strong>Defina o gatilho:</strong> em que tipo de atendimento você vai aplicar (ex: na próxima crise de SAP, no próximo cliente novo).</li>
+      <li><strong>Combine um check-in</strong> rápido (10 minutos) com seu supervisor ou um colega de confiança em 7 dias.</li>
+      <li><strong>Anote 1 caso real</strong> em que aplicou o novo hábito e o que aconteceu.</li>
+      <li><strong>Reavalie</strong> usando este formulário em 30 dias para ver a evolução.</li>
+    </ol>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn-primary" onclick="window.print()">Imprimir / Salvar PDF</button>
+    <button type="button" class="btn-secondary" onclick="resetForm()">Refazer</button>
+  </div>
+
+  <div class="footer-note">
+    Resultado gerado localmente no seu navegador — nada é enviado para nenhum servidor.
+  </div>
+</div>
+
+</div>
+
+<script>
+const dimensions = [
+  {
+    id:'conexao',
+    title:'Conexão e empatia com o cliente',
+    desc:'A capacidade de entender a dor por trás da reclamação antes de responder.',
+    questions:[
+      'Quando recebo uma reclamação, busco entender a dor real do cliente antes de responder.',
+      'Trato o cliente pelo nome e adapto meu tom à situação dele.',
+      'Reconheço quando o cliente está sob pressão e ajusto minha postura.'
+    ]
+  },
+  {
+    id:'negocio',
+    title:'Conhecimento do negócio do cliente',
+    desc:'Saber se é posto de avenida, frota pesada, indústria — e o que isso muda.',
+    questions:[
+      'Sei descrever o tipo de operação do cliente (posto, indústria, TRR, frota, etc.).',
+      'Conheço os ciclos críticos do negócio dele (feriados, picos de demanda, sazonalidade).',
+      'Acompanho mudanças no perfil do cliente ao longo do tempo.'
+    ]
+  },
+  {
+    id:'proatividade',
+    title:'Comunicação proativa',
+    desc:'Avisar antes que o cliente descubra sozinho.',
+    questions:[
+      'Aviso o cliente sobre desvios e atrasos antes de ele perguntar.',
+      'Mantenho cadência regular de atualização em casos pendentes (mesmo que seja para dizer "ainda estou trabalhando").',
+      'Comunico em linguagem clara, sem jargão interno (ICMS travado, SAP fora, etc.).'
+    ]
+  },
+  {
+    id:'ownership',
+    title:'Posse do problema (ownership)',
+    desc:'Para o cliente, quem está na linha é o dono naquele momento.',
+    questions:[
+      'Quando recebo uma demanda, assumo a condução até a resolução final.',
+      'Não transfiro o cliente entre áreas sem fazer uma "passagem de bastão" explicada.',
+      'Mesmo quando a causa está em outra área, sou o ponto de contato dele até resolver.'
+    ]
+  },
+  {
+    id:'crise',
+    title:'Postura em momentos de crise (sistema fora)',
+    desc:'O que fazer quando o SAP, o faturamento ou o crédito travam.',
+    questions:[
+      'Tenho um plano B mapeado para quando o sistema está com problema.',
+      'Sei a quem escalar em logística, fiscal, crédito e TI.',
+      'Mantenho a calma e a clareza com o cliente mesmo sob pressão de sistema.'
+    ]
+  },
+  {
+    id:'expectativas',
+    title:'Gestão de expectativas',
+    desc:'Promete pouco, entrega muito.',
+    questions:[
+      'Prometo prazo conservador e busco entregar antes.',
+      'Não me comprometo com algo que depende de outra área sem alinhar primeiro.',
+      'Quando vejo que o prazo vai estourar, comunico antes de o cliente cobrar.'
+    ]
+  },
+  {
+    id:'fechamento',
+    title:'Pós-atendimento e fechamento de ciclo',
+    desc:'A diferença entre "resolveu" e "deixou o cliente confiante".',
+    questions:[
+      'Confirmo com o cliente que a solução de fato funcionou.',
+      'Documento o caso para que o problema não se repita com outros clientes.',
+      'Faço retorno proativo dias depois para reforçar a relação.'
+    ]
+  },
+  {
+    id:'aprendizado',
+    title:'Aprendizado contínuo e rede interna',
+    desc:'Cada caso difícil é insumo para o próximo atendimento.',
+    questions:[
+      'Após um caso difícil, faço uma reflexão sobre o que poderia ter feito diferente.',
+      'Compartilho aprendizados com colegas e supervisores.',
+      'Conheço pessoalmente quem resolve em logística, fiscal, crédito e TI.'
+    ]
+  }
+];
+
+const scaleLabels = [
+  {n:1, t:'Quase nunca'},
+  {n:2, t:'Raramente'},
+  {n:3, t:'Às vezes'},
+  {n:4, t:'Quase sempre'},
+  {n:5, t:'Sempre'}
+];
+
+// Render form
+const form = document.getElementById('quizForm');
+let totalQuestions = 0;
+dimensions.forEach((dim, dIdx) => {
+  const dimEl = document.createElement('div');
+  dimEl.className = 'dim';
+  dimEl.innerHTML = `
+    <h2><span class="num">${dIdx+1}</span>${dim.title}</h2>
+    <div class="desc">${dim.desc}</div>
+  `;
+  dim.questions.forEach((q, qIdx) => {
+    totalQuestions++;
+    const qId = `${dim.id}_${qIdx}`;
+    const qEl = document.createElement('div');
+    qEl.className = 'q';
+    qEl.innerHTML = `
+      <p>${q}</p>
+      <div class="scale">
+        ${scaleLabels.map(s => `
+          <label data-q="${qId}" data-v="${s.n}">
+            <input type="radio" name="${qId}" value="${s.n}">
+            <span class="lbl-num">${s.n}</span>
+            <span class="lbl-text">${s.t}</span>
+          </label>
+        `).join('')}
+      </div>
+    `;
+    dimEl.appendChild(qEl);
+  });
+  form.appendChild(dimEl);
+});
+
+// Click handling for visual selection
+form.addEventListener('click', e => {
+  const lbl = e.target.closest('label[data-q]');
+  if(!lbl) return;
+  const qId = lbl.dataset.q;
+  // remove selected from siblings
+  form.querySelectorAll(`label[data-q="${qId}"]`).forEach(l => l.classList.remove('selected'));
+  lbl.classList.add('selected');
+  // check input
+  const input = lbl.querySelector('input');
+  input.checked = true;
+  updateProgress();
+});
+
+function updateProgress(){
+  const answered = form.querySelectorAll('input:checked').length;
+  const pct = (answered/totalQuestions)*100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${answered} de ${totalQuestions} respondidas`;
+}
+
+function calculate(){
+  const errorMsg = document.getElementById('errorMsg');
+  const answered = form.querySelectorAll('input:checked').length;
+  if(answered < totalQuestions){
+    errorMsg.classList.add('show');
+    errorMsg.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+  errorMsg.classList.remove('show');
+
+  // Compute scores per dimension
+  const dimScores = dimensions.map(dim => {
+    const vals = dim.questions.map((_, qIdx) => {
+      const checked = form.querySelector(`input[name="${dim.id}_${qIdx}"]:checked`);
+      return parseInt(checked.value);
+    });
+    const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+    return {...dim, score:avg};
+  });
+
+  const totalAvg = dimScores.reduce((a,b)=>a+b.score,0)/dimScores.length;
+
+  // Level
+  let level, levelDesc, levelColor;
+  if(totalAvg >= 4.5){
+    level = 'Referência';
+    levelDesc = 'Você já é um atendimento de excelência. Próximo passo: elevar a régua do time.';
+  } else if(totalAvg >= 3.6){
+    level = 'Forte com pontos para refinar';
+    levelDesc = 'Boa base. Foque nas dimensões mais baixas para virar referência.';
+  } else if(totalAvg >= 2.5){
+    level = 'Sólido com lacunas claras';
+    levelDesc = 'Você está no caminho. Pequenas mudanças de hábito vão gerar saltos visíveis.';
+  } else {
+    level = 'Em desenvolvimento';
+    levelDesc = 'Há grandes oportunidades à frente. Comece por uma dimensão de cada vez.';
+  }
+
+  document.getElementById('totalScore').textContent = totalAvg.toFixed(1).replace('.',',');
+  document.getElementById('levelLabel').textContent = level;
+  document.getElementById('levelDesc').textContent = levelDesc;
+
+  // Bars
+  const barsEl = document.getElementById('dimBars');
+  barsEl.innerHTML = '';
+  dimScores.forEach(d => {
+    const pct = (d.score/5)*100;
+    let color;
+    if(d.score >= 4) color = 'var(--green)';
+    else if(d.score >= 3) color = 'var(--primary-light)';
+    else if(d.score >= 2) color = 'var(--amber)';
+    else color = 'var(--red)';
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `
+      <div class="bar-label">
+        <span class="name">${d.title}</span>
+        <span class="val">${d.score.toFixed(1).replace('.',',')}/5</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+    `;
+    barsEl.appendChild(row);
+  });
+
+  // Top 3 strengths and gaps
+  const sorted = [...dimScores].sort((a,b) => b.score - a.score);
+  const strengths = sorted.slice(0,3);
+  const gaps = sorted.slice(-3).reverse();
+
+  document.getElementById('strengthsList').innerHTML = strengths.map(s =>
+    `<li><strong>${s.title}</strong> — ${s.score.toFixed(1).replace('.',',')}/5</li>`
+  ).join('');
+
+  // Action suggestions per gap
+  const tips = {
+    conexao:'No próximo cliente irritado, antes de responder, repita em voz alta a dor que ele acabou de descrever.',
+    negocio:'Escolha 5 clientes do seu portfólio e descubra esta semana algo novo sobre o negócio de cada um.',
+    proatividade:'Sempre que houver atraso ou desvio, ligue para o cliente antes de ele ligar para você.',
+    ownership:'No próximo handoff, faça você mesmo a "passagem de bastão" e acompanhe o caso até o fim.',
+    crise:'Hoje, mapeie em uma página: quem é meu plano B em logística, fiscal, crédito e TI?',
+    expectativas:'Adicione 20% de folga em todos os prazos que prometer nesta semana. Veja a diferença.',
+    fechamento:'Em todo caso encerrado, mande uma mensagem 24h depois confirmando que ficou tudo bem.',
+    aprendizado:'Reserve 10 minutos toda sexta para anotar: 1 caso difícil da semana e 1 lição que tirei.'
+  };
+
+  document.getElementById('gapsList').innerHTML = gaps.map(g =>
+    `<li><strong>${g.title}</strong> — ${g.score.toFixed(1).replace('.',',')}/5<br>
+     <span style="font-size:13px;color:var(--muted)">→ ${tips[g.id]||'Foque em pequenos hábitos diários.'}</span></li>`
+  ).join('');
+
+  // Show results
+  const results = document.getElementById('results');
+  results.classList.add('show');
+  results.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function resetForm(){
+  form.reset();
+  form.querySelectorAll('label.selected').forEach(l => l.classList.remove('selected'));
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('errorMsg').classList.remove('show');
+  updateProgress();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+updateProgress();
+</script>
+</body>
+</html>
